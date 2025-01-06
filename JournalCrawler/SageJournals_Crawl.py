@@ -2,50 +2,44 @@ import os
 import random
 import time
 from datetime import datetime
-
 from playwright.sync_api import sync_playwright
 from bs4 import BeautifulSoup
-import pymssql, pymysql
+import SageJournals_Sql
+import wonderfulTools
 
 
-def connect_to_sql_server(server, database, username, password):
-    try:
-        conn = pymssql.connect(server=server, database=database, user=username, password=password)
-        return conn
-    except Exception as e:
-        print(f"An error occurred: {e}")
+# 解析每本期刊的 年列表
+def analysis_all_volumes():
+    conn = SageJournals_Sql.connect_to_sql_server(server='192.168.0.253', database='DB_2025_xk', username='sa',
+                                                  password='Zeda#Server#2022@123')
+    dict_file = {
+        'jer': 'https://journals.sagepub.com/loi/jer',
+        'pif': 'https://journals.sagepub.com/loi/pif',
+        'pid': 'https://journals.sagepub.com/loi/pid',
+        'trr': 'https://journals.sagepub.com/loi/trr'
+    }
+    save_path = 'E:\\ZKZD2025\\Journal\\journals.sagepub.com\\'
+    list_data = []
+    for key, value in dict_file.items():
+        html_str_txt = wonderfulTools.read_text_from_file(f"{save_path}\\{key}\\{key}.html")
+        print(key)
+        journal_name = key
+        soup = BeautifulSoup(html_str_txt, 'html.parser')
+        items = (soup.find('div', class_='loi__banner-list')).find('div', class_='tab__content')
+        for item in items:
+            for li in item.find_all('li', class_='tab__nav__item'):
+                year = li.find('a').text
+                url = 'https://journals.sagepub.com' + li.find('a').get('href')
+                print(year, url)
+                one_object = (journal_name, year, url, '否', '-')
+                list_data.append(one_object)
+    SageJournals_Sql.insert_to_sql_server_volumes(list_data, conn)
 
 
-def insert_to_sql_server(list_data, conn):
-    try:
-        cursor = conn.cursor()
-        cursor.executemany(
-            "INSERT INTO sage_journals_issues (journal_name, year, issues_url,down_status,down_time) VALUES (%s, %s, %s,%s,%s)",
-            list_data)
-        conn.commit()
-        cursor.close()
-        print("Data inserted successfully.")
-    except Exception as e:
-        print("Caught a ValueError:", e)
-
-
-def insert_to_sql_server_pages(list_data, conn):
-    try:
-        cursor = conn.cursor()
-        cursor.executemany(
-            "INSERT INTO sage_journal_pages (journal_name, year, volume,issue,page_url,down_status,down_time) VALUES (%s, %s, %s,%s,%s,%s,%s)",
-            list_data)
-        conn.commit()
-        cursor.close()
-        print("Data inserted successfully.")
-    except Exception as e:
-        # print("Error : ", e)
-        print(e)
-
-
-def select_all_issues(main_path: str):
-    conn = connect_to_sql_server(server='192.168.0.253', database='DB_2025_xk', username='sa',
-                                 password='xkxkxkxkxk')
+# 下载每年的期刊分卷页面
+def down_all_years_volumes(main_path: str):
+    conn = SageJournals_Sql.connect_to_sql_server(server='192.168.0.253', database='DB_2025_xk', username='sa',
+                                                  password='Zeda#Server#2022@123')
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM sage_journals_issues")
     rows = cursor.fetchall()
@@ -59,43 +53,16 @@ def select_all_issues(main_path: str):
             if html_str_txt == 'Error':
                 continue
             else:
-                save_text_to_file(html_str_txt, f"{main_path}\\{journal_name}\\{journal_name}_{year}.html")
+                wonderfulTools.save_text_to_file(html_str_txt,
+                                                 f"{main_path}\\{journal_name}\\{journal_name}_{year}.html")
     cursor.close()
 
 
-# 解析issues的年页面获取所有年时间
-def analysis_all_issues():
-    conn = connect_to_sql_server(server='192.168.0.253', database='DB_2025_xk', username='sa',
-                                 password='xkxkxkxkxk')
-    dict_file = {
-        'jer': 'https://journals.sagepub.com/loi/jer',
-        'pif': 'https://journals.sagepub.com/loi/pif',
-        'pid': 'https://journals.sagepub.com/loi/pid',
-        'trr': 'https://journals.sagepub.com/loi/trr'
-    }
-    save_path = 'E:\\ZKZD2025\\Journal\\journals.sagepub.com\\'
-    list_data = []
-    for key, value in dict_file.items():
-        html_str_txt = read_text_from_file(f"{save_path}\\{key}\\{key}.html")
-        print(key)
-        journal_name = key
-        soup = BeautifulSoup(html_str_txt, 'html.parser')
-        items = (soup.find('div', class_='loi__banner-list')).find('div', class_='tab__content')
-        for item in items:
-            for li in item.find_all('li', class_='tab__nav__item'):
-                year = li.find('a').text
-                url = 'https://journals.sagepub.com' + li.find('a').get('href')
-                print(year, url)
-                one_object = (journal_name, year, url, '否', '-')
-                list_data.append(one_object)
-    insert_to_sql_server(list_data, conn)
-
-
-# 解析issues详情页面,获取期刊所有年卷
+# 解析每年的期刊分卷页面
 def analysis_issues_page(save_path: str):
     try:
-        conn = connect_to_sql_server(server='192.168.0.253', database='DB_2025_xk', username='sa',
-                                     password='xkxkxkxkxk')
+        conn = SageJournals_Sql.connect_to_sql_server(server='192.168.0.253', database='DB_2025_xk', username='sa',
+                                                      password='Zeda#Server#2022@123')
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM sage_journals_issues")
         rows = cursor.fetchall()
@@ -105,7 +72,7 @@ def analysis_issues_page(save_path: str):
             url = row[3]
             year = row[2]
             journal_name = row[1]
-            html_text = read_text_from_file(f"{save_path}\\{journal_name}\\{journal_name}_{year}.html")
+            html_text = wonderfulTools.read_text_from_file(f"{save_path}\\{journal_name}\\{journal_name}_{year}.html")
             print(f"{journal_name} {year}")
             html_issue = BeautifulSoup(html_text, 'html.parser')
             items = (html_issue.find_all('div', class_='loi__issues'))
@@ -123,7 +90,7 @@ def analysis_issues_page(save_path: str):
                     print("---------")
             print("END")
 
-        insert_to_sql_server_pages(list_data, conn)
+        SageJournals_Sql.insert_to_sql_server_pages(list_data, conn)
         cursor.close()
         conn.close()
 
@@ -166,23 +133,11 @@ def launch_browser_with_defaults(dict_url: str, wait_thing: str):
         return 'Error'
 
 
-def update_status_to_sql_server(table_name, status, id):
-    conn = connect_to_sql_server(server='192.168.0.253', database='DB_2025_xk', username='sa',
-                                 password='xkxkxkxkxk')
-    cursor = conn.cursor()
-    cursor.execute(f"UPDATE {table_name} SET down_status = %s WHERE id = %d", (status, id))
-    # 更新时间
-    time_now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    cursor.execute(f"UPDATE {table_name} SET down_time = %s WHERE id = %d", (time_now, id))
-    conn.commit()
-    cursor.close()
-    conn.close()
-
-
+# 下载每本的列表文章页面
 def down_issues_page():
     try:
-        conn = connect_to_sql_server(server='192.168.0.253', database='DB_2025_xk', username='sa',
-                                     password='xkxkxkxkxk')
+        conn = SageJournals_Sql.connect_to_sql_server(server='192.168.0.253', database='DB_2025_xk', username='sa',
+                                                      password='Zeda#Server#2022@123')
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM sage_journal_pages")
         rows = cursor.fetchall()
@@ -199,44 +154,22 @@ def down_issues_page():
                 if html_str_txt == 'Error':
                     continue
                 else:
-                    save_text_to_file(html_str_txt,
-                                      f"{main_path}\\{journal_name}\\pages\\{journal_name}_{year}_{volume}_{issue}.html")
-                    update_status_to_sql_server("sage_journal_pages", '是', row[0])
+                    wonderfulTools.save_text_to_file(html_str_txt,
+                                                     f"{main_path}\\{journal_name}\\pages\\{journal_name}_{year}_{volume}_{issue}.html")
+                    SageJournals_Sql.update_status_to_sql_server("sage_journal_pages", '是', row[0])
                 sleep_time = random.uniform(1, 10)
                 time.sleep(sleep_time)
     except Exception as e:
         print(f"An error occurred: {e}")
 
 
-def save_text_to_file(text, file_path):
-    try:
-        # 确保目录存在
-        os.makedirs(os.path.dirname(file_path), exist_ok=True)
-        # 写入文本到文件
-        with open(file_path, 'w', encoding='utf-8') as file:
-            file.write(text)
-        print(f"Text successfully saved to {file_path}")
-    except Exception as e:
-        print(f"An error occurred while trying to save the file: {e}")
-
-
-def read_text_from_file(file_path):
-    try:
-        with open(file_path, 'r', encoding='utf-8') as file:
-            text = file.read()
-        return text
-    except Exception as e:
-        print(f"An error occurred while trying to read the file: {e}")
-
-
 if __name__ == '__main__':
-    # 插入issues
-    # analysis_all_issues()
+    # 解析每天拥有多少
+    # analysis_all_volumes()
 
-    # E:\ZKZD2025\Journal\journals.sagepub.com
     main_path = 'E:\\ZKZD2025\\Journal\\journals.sagepub.com\\'
-    # 下载每年的详情issues页
-    # select_all_issues(main_path)
+    # 下载每年的分卷页面
+    # down_all_years_volumes(main_path)
 
     # 解析详情issues页
     # analysis_issues_page(main_path)
