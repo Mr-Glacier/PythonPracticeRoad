@@ -1,0 +1,4 @@
+Flask
+flask-cors
+text2vec
+transformers
