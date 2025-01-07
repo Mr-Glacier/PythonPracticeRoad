@@ -2,3 +2,6 @@ Flask
 flask-cors
 text2vec
 transformers
+tqdm
+torch
+sentence_transformers
