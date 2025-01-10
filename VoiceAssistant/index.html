@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>音频助手 V1.0</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 50px;
+        }
+
+        .controls {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        textarea {
+            width: 80%;
+            max-width: 600px;
+            margin-top: 20px;
+        }
+
+        /* 设置容器样式 */
+        .button-container {
+            height: 100px;
+            width: 50%;
+            background-color: #f6f6f6;
+            display: flex;
+            justify-content: center; /* 水平居中对齐 */
+            align-items: center; /* 垂直居中对齐 */
+            gap: 10px; /* 按钮之间的间距 */
+            margin-top: 20px; /* 距离顶部的间距 */
+        }
+
+        /* 设置按钮样式 */
+        .button-container button {
+            padding: 10px 20px; /* 内边距 */
+            font-size: 16px; /* 字体大小 */
+            cursor: pointer; /* 鼠标悬停时显示指针 */
+            border: none; /* 移除边框 */
+            background-color: #007BFF; /* 背景颜色 */
+            color: white; /* 文字颜色 */
+            border-radius: 5px; /* 圆角 */
+            transition: background-color 0.3s ease; /* 平滑过渡效果 */
+        }
+
+        /* 设置按钮悬停时的样式 */
+        .button-container button:hover {
+            background-color: #0056b3; /* 更深的背景颜色 */
+        }
+
+        .file-container {
+            height: 100px;
+            width: 50%;
+            background-color: #f6f6f6;
+            display: none;
+            justify-content: center; /* 水平居中对齐 */
+            align-items: center; /* 垂直居中对齐 */
+            gap: 10px; /* 按钮之间的间距 */
+            margin-top: 20px; /* 距离顶部的间距 */
+        }
+
+        .file-container button:hover {
+            background-color: #0056b3; /* 更深的背景颜色 */
+        }
+
+        /* 设置按钮样式 */
+        .file-container button {
+            padding: 10px 20px; /* 内边距 */
+            font-size: 16px; /* 字体大小 */
+            cursor: pointer; /* 鼠标悬停时显示指针 */
+            border: none; /* 移除边框 */
+            background-color: #007BFF; /* 背景颜色 */
+            color: white; /* 文字颜色 */
+            border-radius: 5px; /* 圆角 */
+            transition: background-color 0.3s ease; /* 平滑过渡效果 */
+        }
+
+        /* 应用介绍区域的整体样式 */
+        .app-description {
+            width: 60%;
+            height: 150px;
+            margin: 10px 0;
+            padding: 20px;
+            text-align: center;
+            line-height: 20px;
+            font-size: 18px;
+            background-color: #f9f9f9; /* 浅灰色背景 */
+            border: 1px solid #ddd; /* 边框 */
+            border-radius: 8px; /* 圆角 */
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* 阴影效果 */
+        }
+
+        /* 标题样式 */
+        .app-description h2 {
+            color: #333; /* 深灰色文字 */
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+
+        /* 段落样式 */
+        .app-description p {
+            line-height: 1.6; /* 行间距 */
+            color: #555; /* 文字颜色 */
+            font-size: 1em;
+        }
+
+        .text-box {
+            line-height: 1.5; /* 调整这个值以改变行间距 */
+            margin-top: 20px;
+            width: 80%;
+            height: 200px;
+        }
+
+        #responseTextArea {
+            padding: 10px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+            line-height: 20px;
+            background-color: #f6f6f6;
+            resize: vertical; /* 允许用户调整高度 */
+        }
+
+        .copyButton {
+            display: block;
+            margin-top: 10px;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .copyButton:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+
+<body>
+<h1>音频助手 V1.0</h1>
+<!-- 应用介绍区域 -->
+<div class="app-description">
+    <h3>Powered by whisper</h3>
+    <!--    <p>version: V1</p>-->
+    <div style="line-height:40px;font-weight: bold;display: flex;">麦克风转换: &nbsp;<div style="font-weight: normal">
+        点击开始录音，点击“停止录音”按钮,后转换解析音频使用。
+    </div>
+    </div>
+    <div style="line-height:40px;font-weight: bold;display: flex;">文件转换: &nbsp;<div style="font-weight: normal">
+        上传录音文件,点击开始解析。
+    </div>
+    </div>
+</div>
+<div class="controls">
+    <button id="mkf-btn">实时解析</button>
+    <button id="file-btn">文件解析</button>
+</div>
+<div class="button-container" id="mkf-container">
+    <button id="start-btn">开始录音</button>
+    <button id="stop-btn">停止录音</button>
+    <button id="play-btn">播放录音</button>
+</div>
+<div class="file-container" id="file-container">
+    <input type="file" id="file-input" accept="audio/*">
+    </input>
+    <button id="analysis-btn">开始解析</button>
+</div>
+
+<textarea class="text-box" id="responseTextArea" placeholder="服务器响应将显示在这里..."></textarea>
+<button class="copyButton" onclick="copyToClipboard()">复制文本</button>
+<script>
+    const startBtn = document.querySelector('#start-btn');  // 开始录音按钮
+    const stopBtn = document.querySelector('#stop-btn');  // 停止录音按钮
+    const playBtn = document.querySelector('#play-btn');  // 播放录音按钮
+    let mediaRecorder = null;  // 存放 MediaRecorder
+    let audioData = [];  // 存储录音数据块
+    let audioBlob = null;  // 存储最终的音频 Blob
+
+    const fileBtn = document.querySelector('#file-btn'); // 监听文件上传按钮
+    const mkfBtn = document.querySelector('#mkf-btn'); // 监听麦克风转换按钮
+
+    // 文件上传区域触发
+    fileBtn.addEventListener('click', () => {
+        const mkfArea = document.getElementById('mkf-container');
+        mkfArea.style.display = 'none';
+        const fileArea = document.getElementById('file-container');
+        fileArea.style.display = 'flex';
+    })
+    // 麦克风转换区域触发
+    mkfBtn.addEventListener('click', () => {
+        const mkfArea = document.getElementById('mkf-container');
+        mkfArea.style.display = 'flex';
+        const fileArea = document.getElementById('file-container');
+        fileArea.style.display = 'none';
+    })
+
+
+    // 开始录音按钮点击
+    startBtn.addEventListener('click', () => {
+        // 清空之前的录音数据
+        audioData = [];
+        audioBlob = null;
+
+        // 请求麦克风权限
+        navigator.mediaDevices.getUserMedia({audio: true}).then(stream => {
+            // 创建媒体记录
+            mediaRecorder = new MediaRecorder(stream, {mimeType: 'audio/webm'});
+            // 开始录制
+            mediaRecorder.start();
+
+            // 处理音频数据
+            mediaRecorder.addEventListener('dataavailable', ev => {
+                // 把数据块添加到数组
+                audioData.push(ev.data);
+            });
+
+            // 录音停止
+            mediaRecorder.addEventListener('stop', () => {
+                // 把音频数据块转换为 Blob
+                audioBlob = new Blob(audioData, {type: 'audio/webm'});
+                // 发送音频数据到后端
+                sendAudioToServer(audioBlob);
+            });
+        }).catch(info => {
+            alert('无法获取麦克风权限！错误信息：' + info);
+        });
+    });
+
+    // 停止录音按钮点击
+    stopBtn.addEventListener('click', () => {
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+            mediaRecorder.stop();
+        }
+    });
+
+    // 播放录音按钮点击
+    playBtn.addEventListener('click', () => {
+        if (audioBlob) {
+            // 创建一个 URL 资源对象给 Audio 读取
+            const audioUrl = URL.createObjectURL(audioBlob);
+            const audio = new Audio(audioUrl);
+            // 播放音频
+            audio.play();
+        } else {
+            alert('没有可用的录音数据！');
+        }
+    });
+
+    // 发送音频数据到后端
+    function sendAudioToServer(blob) {
+        const formData = new FormData();
+        formData.append('file', blob, 'recording.webm');  // 确保字段名为 'file'
+
+        fetch('http://127.0.0.1:3000/analysis-audio', {
+            method: 'POST',
+            body: formData
+        })
+            .then(response => response.json())
+            .then(data => {
+                console.log('成功发送到服务器:', data);
+                document.getElementById('responseTextArea').value = data; // 将JSON对象格式化后显示在文本框中
+            })
+            .catch(error => {
+                console.error('发送到服务器失败:', error);
+                alert('文件解析失败，请重试！');
+
+            });
+    }
+
+    function copyToClipboard() {
+        const copyText = document.getElementById("responseTextArea");
+        copyText.select();
+        document.execCommand("copy");
+        alert("文本已复制到剪贴板！");
+    }
+
+    document.getElementById('analysis-btn').addEventListener('click', function () {
+        const fileInput = document.getElementById('file-input');
+        const file = fileInput.files[0];
+
+        if (!file) {
+            alert('请先选择一个音频文件！');
+            return;
+        }
+
+        // 创建 FormData 对象
+        const formData = new FormData();
+        formData.append('file', file);
+
+        // 发送请求到服务器
+        fetch('http://127.0.0.1:3000/analysis-audio', {
+            method: 'POST',
+            body: formData
+        })
+            .then(response => response.json())
+            .then(data => {
+                console.log('成功:', data);
+                // alert('文件解析成功！');
+                document.getElementById('responseTextArea').value = data;
+            })
+            .catch(error => {
+                console.error('错误:', error);
+                alert('文件解析失败，请重试！' + error);
+            });
+    });
+</script>
+</body>
+</html>
