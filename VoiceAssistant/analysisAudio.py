@@ -26,7 +26,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-asr_model = os.environ.get("ASR_MODEL", "http://localhost:9000")
+asr_model = os.environ.get("ASR_MODEL", "http://127.0.0.1:9000")
+voice_url = os.environ.get("VOICE_LOCAL", "https://127.0.0.1:9000")
 app.mount("/asr/files", StaticFiles(directory="workspace"), name="files")
 if os.path.exists("workspace/save.data"):
     global_data = json.load(open("workspace/save.data"))
@@ -37,7 +38,8 @@ templates = Jinja2Templates(directory=".")
 
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    analysis_api_url = f"{voice_url}/analysis-audio"
+    return templates.TemplateResponse("index.html", {"request": request, "analysis_api_url": analysis_api_url})
 
 
 @app.post('/analysis-audio')

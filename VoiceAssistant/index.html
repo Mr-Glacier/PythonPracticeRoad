@@ -260,7 +260,7 @@
         const formData = new FormData();
         formData.append('file', blob, 'recording.webm');  // 确保字段名为 'file'
 
-        fetch('http://127.0.0.1:3000/analysis-audio', {
+        fetch('{{ analysis_api_url }}', {
             method: 'POST',
             body: formData
         })
@@ -297,7 +297,7 @@
         formData.append('file', file);
 
         // 发送请求到服务器
-        fetch('http://127.0.0.1:3000/analysis-audio', {
+        fetch('{{ analysis_api_url }}', {
             method: 'POST',
             body: formData
         })
